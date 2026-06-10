@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialogue Summarizer v3.0 - Interactive Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ========== HEADER ========== */
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        /* ========== INPUT SECTION ========== */
+        .input-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 1em;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .strategies {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .strategy-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .strategy-option:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .strategy-option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin-right: 12px;
+            accent-color: #667eea;
+        }
+
+        .strategy-info {
+            flex: 1;
+        }
+
+        .strategy-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .strategy-desc {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .strategy-stats {
+            text-align: right;
+            font-size: 0.85em;
+        }
+
+        .stat-item {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* ========== RESULTS SECTION ========== */
+        .results-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        /* ========== CARD LAYOUT ========== */
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            color: #667eea;
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.3em;
+        }
+
+        /* ========== SUMMARY CARD ========== */
+        .summary-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .summary-text {
+            font-size: 1.2em;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .strategy-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        /* ========== TOKENIZATION ========== */
+        .token-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f5f7ff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* ========== ATTENTION MASK VISUALIZATION ========== */
+        .attention-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        .attention-mask {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .token-item {
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 600;
+            color: white;
+            position: relative;
+        }
+
+        .token-item.real {
+            background: #667eea;
+            box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .token-item.padding {
+            background: #ccc;
+        }
+
+        .token-item:hover::after {
+            content: attr(data-token);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .mask-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* ========== BEAM SEARCH COMPARISON ========== */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .comparison-box {
+            background: #f5f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .comparison-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comparison-text {
+            color: #555;
+            line-height: 1.5;
+            font-size: 0.95em;
+        }
+
+        .best-badge {
+            background: #4caf50;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        /* ========== QUALITY METRICS ========== */
+        .quality-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quality-box {
+            background: #f5f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .quality-score {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .quality-label {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        /* ========== PERFORMANCE CHART ========== */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+
+        /* ========== TABS ========== */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-size: 1em;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .strategies {
+                grid-template-columns: 1fr;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .token-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* ========== ERROR ========== */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* ========== SUCCESS ========== */
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2e7d32;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        /* ========== DEBUG INFO ========== */
+        .debug-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #333;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+
+        .debug-key {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* ========== FOOTER ========== */
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        .footer-text {
+            font-size: 0.9em;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <h1>🎯 Dialogue Summarizer</h1>
+            <p class="subtitle">Production-Ready NLP Pipeline with Complete Transparency</p>
+            <span class="version-badge">v3.0 - All 3 Strategies</span>
+        </header>
+
+        <!-- INPUT SECTION -->
+        <div class="input-section">
+            <div class="input-group">
+                <label for="dialogue">📝 Enter Dialogue to Summarize:</label>
+                <textarea id="dialogue" placeholder="Example: Customer: I want to cancel my subscription. Agent: Can I help you with that? Customer: No, I've decided to leave."></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>🎛️ Select Strategy:</label>
+                <div class="strategies">
+                    <!-- ZERO-SHOT -->
+                    <label class="strategy-option">
+                        <input type="radio" name="strategy" value="zero_shot">
+                        <div class="strategy-info">
+                            <div class="strategy-name">Zero-Shot</div>
+                            <div class="strategy-desc">No examples, just ask</div>
+                        </div>
+                        <div class="strategy-stats">
+                            <div class="stat-item">72%</div>
+                            <div class="stat-item">⚡⚡⚡⚡⚡</div>
+                        </div>
+                    </label>
+
+                    <!-- FEW-SHOT (DEFAULT) -->
+                    <label class="strategy-option">
+                        <input type="radio" name="strategy" value="few_shot" checked>
+                        <div class="strategy-info">
+                            <div class="strategy-name">Few-Shot ⭐</div>
+                            <div class="strategy-desc">Show 2 examples (Recommended)</div>
+                        </div>
+                        <div class="strategy-stats">
+                            <div class="stat-item">78%</div>
+                            <div class="stat-item">⚡⚡⚡</div>
+                        </div>
+                    </label>
+
+                    <!-- INSTRUCTION-BASED -->
+                    <label class="strategy-option">
+                        <input type="radio" name="strategy" value="instruction_based">
+                        <div class="strategy-info">
+                            <div class="strategy-name">Instruction-Based</div>
+                            <div class="strategy-desc">5 detailed rules</div>
+                        </div>
+                        <div class="strategy-stats">
+                            <div class="stat-item">80%</div>
+                            <div class="stat-item">⚡⚡</div>
+                        </div>
+                    </label>
+
+                    <!-- COMPARE-ALL -->
+                    <label class="strategy-option">
+                        <input type="radio" name="strategy" value="compare_all">
+                        <div class="strategy-info">
+                            <div class="strategy-name">Compare All</div>
+                            <div class="strategy-desc">Auto-pick best result</div>
+                        </div>
+                        <div class="strategy-stats">
+                            <div class="stat-item">80%</div>
+                            <div class="stat-item">⚡</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn-primary" id="summarizeBtn" onclick="summarize()">
+                    📤 Summarize
+                </button>
+                <button class="btn-secondary" onclick="loadExample()">
+                    💡 Load Example
+                </button>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+            <div class="loading" id="loadingMessage"></div>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        <div class="results-section" id="resultsSection">
+            <!-- SUMMARY -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">📋</span>
+                    Summary Result
+                </div>
+                <div class="summary-box">
+                    <div class="summary-text" id="summaryText"></div>
+                    <span class="strategy-badge" id="strategyBadge"></span>
+                </div>
+            </div>
+
+            <!-- TOKENIZATION -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">🔤</span>
+                    Tokenization Analysis
+                </div>
+                <div class="token-stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalTokens">0</div>
+                        <div class="stat-label">Total Tokens</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="realTokens">0</div>
+                        <div class="stat-label">Real Tokens</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="paddingTokens">0</div>
+                        <div class="stat-label">Padding Tokens</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="paddingPercent">0%</div>
+                        <div class="stat-label">Padding %</div>
+                    </div>
+                </div>
+                <div style="background: #f5f7ff; padding: 15px; border-radius: 8px;">
+                    <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">
+                        <strong>What it means:</strong> Your dialogue was converted to
+                        <strong id="tokenExpl1">0</strong> token IDs.
+                        <strong id="tokenExpl2">0</strong> are real content,
+                        <strong id="tokenExpl3">0</strong> are padding added to make sequences uniform.
+                    </p>
+                    <p style="color: #666; font-size: 0.85em;">
+                        ⏱️ Tokenization time: <strong id="tokenizationTime">0ms</strong>
+                    </p>
+                </div>
+            </div>
+
+            <!-- ATTENTION MASK -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">👁️</span>
+                    Attention Mask Visualization
+                </div>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">
+                    The attention mask tells the model which tokens to process (1) and which to ignore (0).
+                </p>
+                <div class="attention-container">
+                    <div class="attention-mask" id="attentionMask"></div>
+                </div>
+                <div class="mask-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #667eea;"></div>
+                        <span>Real Token (Process) = <strong id="maskOnes">0</strong></span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ccc;"></div>
+                        <span>Padding (Ignore) = <strong id="maskZeros">0</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GENERATION / BEAM SEARCH -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">🔍</span>
+                    Beam Search Comparison
+                </div>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">
+                    The model generates summaries using different strategies.
+                    Beam search explores multiple paths to find better results.
+                </p>
+                <div class="comparison-grid">
+                    <div class="comparison-box">
+                        <div class="comparison-title">
+                            Greedy (num_beams=1)
+                            <span style="color: #999; font-weight: 400; font-size: 0.8em;">⚡ Fastest</span>
+                        </div>
+                        <div class="comparison-text" id="greedyOutput"></div>
+                    </div>
+                    <div class="comparison-box">
+                        <div class="comparison-title">
+                            Beam-2 (num_beams=2)
+                            <span class="best-badge">✓ BEST</span>
+                        </div>
+                        <div class="comparison-text" id="beam2Output"></div>
+                    </div>
+                    <div class="comparison-box">
+                        <div class="comparison-title">
+                            Beam-3 (num_beams=3)
+                            <span style="color: #999; font-weight: 400; font-size: 0.8em;">⚡ Slower</span>
+                        </div>
+                        <div class="comparison-text" id="beam3Output"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUALITY METRICS -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">⭐</span>
+                    Quality Evaluation
+                </div>
+                <div class="quality-grid">
+                    <div class="quality-box">
+                        <div class="quality-score" id="qualityScore">0.00</div>
+                        <div class="quality-label">Estimated Quality</div>
+                    </div>
+                    <div class="quality-box">
+                        <div class="quality-score" id="strategyQuality">0.00</div>
+                        <div class="quality-label" id="strategyQualityLabel">Strategy Expected</div>
+                    </div>
+                    <div class="quality-box">
+                        <div class="quality-score" id="wordCount">0</div>
+                        <div class="quality-label">Word Count</div>
+                    </div>
+                    <div class="quality-box">
+                        <div class="quality-score" id="qualityText">-</div>
+                        <div class="quality-label">Quality Level</div>
+                    </div>
+                </div>
+                <p style="color: #666; font-size: 0.9em; margin-top: 15px;">
+                    <strong>Explanation:</strong>
+                    <span id="qualityExplanation"></span>
+                </p>
+            </div>
+
+            <!-- PERFORMANCE -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">⚡</span>
+                    Performance Metrics
+                </div>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    <div class="stat-box">
+                        <div class="stat-value" id="tokenizationMs">0</div>
+                        <div class="stat-label">Tokenization (ms)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="generationMs">0</div>
+                        <div class="stat-label">Generation (ms)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalMs">0</div>
+                        <div class="stat-label">Total Time (ms)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="throughput">0</div>
+                        <div class="stat-label">Tokens/sec</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RAW DATA -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="card-icon">🔧</span>
+                    Raw API Response
+                </div>
+                <div class="debug-info" id="rawData"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p class="footer-text">
+            Built with ❤️ | FLAN-T5-base | FastAPI | Complete NLP Pipeline Visualization
+        </p>
+    </footer>
+
+    <script>
+        // API endpoint
+        const API_URL = 'https://koushikm31-dialogue-summarizer.hf.space';
+
+        // Load example dialogue
+        function loadExample() {
+            document.getElementById('dialogue').value =
+                "Customer: I want to cancel my subscription immediately. I'm not satisfied with the service.\n" +
+                "Agent: I understand your concern. Can we discuss what's not working for you?\n" +
+                "Customer: The response time is too slow and the features are limited.\n" +
+                "Agent: We can offer you a discount to continue. We also have premium features available.";
+        }
+
+        // Main summarize function
+        async function summarize() {
+            const dialogue = document.getElementById('dialogue').value.trim();
+            const strategy = document.querySelector('input[name="strategy"]:checked').value;
+
+            // Validation
+            if (!dialogue || dialogue.length < 10) {
+                showError('Please enter a dialogue with at least 10 characters.');
+                return;
+            }
+
+            // Show loading state
+            const btn = document.getElementById('summarizeBtn');
+            btn.disabled = true;
+            document.getElementById('loadingMessage').textContent = '⏳ Processing... This may take 10-20 seconds for first request...';
+            document.getElementById('loadingMessage').style.display = 'block';
+            hideError();
+            hideSuccess();
+
+            try {
+                // Call API
+                const response = await fetch(`${API_URL}/summarize`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dialogue: dialogue,
+                        strategy: strategy,
+                        show_debug: false
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.status === 200) {
+                    displayResults(data);
+                    showSuccess('✅ Summarization complete!');
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(`Connection Error: ${error.message}. Make sure the API is running at ${API_URL}`);
+            } finally {
+                btn.disabled = false;
+                document.getElementById('loadingMessage').style.display = 'none';
+            }
+        }
+
+        // Display results
+        function displayResults(data) {
+            // Show results section
+            document.getElementById('resultsSection').classList.add('show');
+
+            // SUMMARY
+            document.getElementById('summaryText').textContent = data.summary;
+            document.getElementById('strategyBadge').textContent = `Strategy: ${data.strategy}`;
+
+            // TOKENIZATION
+            const tokenization = data.tokenization;
+            document.getElementById('totalTokens').textContent = tokenization.total_tokens;
+            document.getElementById('realTokens').textContent = tokenization.real_tokens;
+            document.getElementById('paddingTokens').textContent = tokenization.padding_tokens;
+            document.getElementById('paddingPercent').textContent = tokenization.padding_percentage + '%';
+            document.getElementById('tokenizationTime').textContent = tokenization.tokenization_time_ms + 'ms';
+
+            document.getElementById('tokenExpl1').textContent = tokenization.total_tokens;
+            document.getElementById('tokenExpl2').textContent = tokenization.real_tokens;
+            document.getElementById('tokenExpl3').textContent = tokenization.padding_tokens;
+
+            // ATTENTION MASK
+            const attention = data.attention_info;
+            const maskHTML = createAttentionMaskHTML(attention.sample_mask, tokenization.sample_tokens);
+            document.getElementById('attentionMask').innerHTML = maskHTML;
+            document.getElementById('maskOnes').textContent = attention.ones_count;
+            document.getElementById('maskZeros').textContent = attention.zeros_count;
+
+            // GENERATION
+            const generation = data.generation_info;
+            document.getElementById('greedyOutput').textContent = generation.greedy_output;
+            document.getElementById('beam2Output').textContent = generation.beam2_output;
+            document.getElementById('beam3Output').textContent = generation.beam3_output;
+
+            // QUALITY
+            const quality = data.quality_metrics;
+            document.getElementById('qualityScore').textContent = quality.estimated_quality_score.toFixed(2);
+            document.getElementById('strategyQuality').textContent =
+                (quality.strategy_expected_quality[data.strategy] || 0).toFixed(2);
+            document.getElementById('wordCount').textContent = quality.summary_word_count;
+            document.getElementById('qualityText').textContent = quality.quality_interpretation;
+            document.getElementById('qualityExplanation').textContent =
+                `${data.strategy.toUpperCase()} strategy typically achieves ${quality.strategy_expected_quality[data.strategy]} accuracy. Your summary is ${quality.summary_word_count} words long (ideal: 8-15 words).`;
+
+            // PERFORMANCE
+            const performance = data.performance;
+            document.getElementById('tokenizationMs').textContent = performance.tokenization_ms;
+            document.getElementById('generationMs').textContent = performance.generation_ms;
+            document.getElementById('totalMs').textContent = performance.total_time_ms;
+            document.getElementById('throughput').textContent = performance.throughput_tokens_per_sec;
+
+            // Create performance chart
+            createPerformanceChart(performance);
+
+            // RAW DATA
+            document.getElementById('rawData').textContent = JSON.stringify(data, null, 2);
+
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Create attention mask visualization
+        function createAttentionMaskHTML(mask, tokens) {
+            let html = '';
+            for (let i = 0; i < mask.length; i++) {
+                const isReal = mask[i] === 1;
+                const tokenDisplay = tokens && tokens[i] ? tokens[i] : `T${i}`;
+                html += `<div class="token-item ${isReal ? 'real' : 'padding'}" data-token="${tokenDisplay}">${isReal ? '1' : '0'}</div>`;
+            }
+            return html;
+        }
+
+        // Create performance chart
+        let performanceChart = null;
+        function createPerformanceChart(performance) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+
+            performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tokenization', 'Generation', 'Total Time'],
+                    datasets: [{
+                        label: 'Time (milliseconds)',
+                        data: [
+                            performance.tokenization_ms,
+                            performance.generation_ms,
+                            performance.total_time_ms
+                        ],
+                        backgroundColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#667eea80'
+                        ],
+                        borderColor: ['#667eea', '#764ba2', '#667eea'],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: { size: 12 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' ms';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Error handling
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.classList.add('show');
+        }
+
+        function hideSuccess() {
+            document.getElementById('successMessage').classList.remove('show');
+        }
+    </script>
+</body>
+</html>
